@@ -1,0 +1,39 @@
+body {
+    background-color: #f8f9fa;
+    font-family: Arial, sans-serif;
+}
+
+header {
+    background-color: #343a40;
+    color: #fff;
+    padding: 20px 0;
+}
+
+.logo {
+    max-width: 150px;
+}
+
+nav ul {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    gap: 15px;
+}
+
+.nav-link {
+    color: #fff;
+    text-decoration: none;
+    background-color: rgb(45, 45, 94);
+    border-radius: 5px;
+}
+
+.nav-link:hover {
+    text-decoration: underline;
+}
+
+footer {
+    margin-top: 40px;
+    padding: 10px 0;
+    background-color: #343a40;
+    color: #fff;
+}
