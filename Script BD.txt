@@ -1,0 +1,81 @@
+CREATE DATABASE IF NOT EXISTS REPORTES;
+USE REPORTES;
+
+-- Iniciar una transacción
+START TRANSACTION;
+
+-- Tabla Edificios
+CREATE TABLE IF NOT EXISTS Edificios (
+    id_edificio INT PRIMARY KEY AUTO_INCREMENT,
+    nombre_edificio VARCHAR(100) NOT NULL
+);
+
+-- Tabla Ubicaciones
+CREATE TABLE IF NOT EXISTS Ubicaciones (
+    id_ubicacion INT PRIMARY KEY AUTO_INCREMENT,
+    nombre_ubicacion VARCHAR(100) NOT NULL,
+    id_edificio INT NOT NULL
+);
+
+-- Tabla Departamentos
+CREATE TABLE IF NOT EXISTS Departamentos (
+    id_departamento INT PRIMARY KEY AUTO_INCREMENT,
+    nombre_departamento VARCHAR(100) NOT NULL
+);
+
+-- Tabla Ubicaciones_Departamentos
+CREATE TABLE IF NOT EXISTS Ubicaciones_Departamentos (
+    id_ubicacion INT NOT NULL,
+    id_departamento INT NOT NULL,
+    PRIMARY KEY (id_ubicacion, id_departamento)
+);
+
+-- Tabla Usuarios
+CREATE TABLE IF NOT EXISTS Usuarios (
+    id_usuario INT PRIMARY KEY AUTO_INCREMENT,
+    nombre_usuario VARCHAR(100) NOT NULL,
+    contrasena VARCHAR(100) NOT NULL,
+    tipo_usuario VARCHAR(50) NOT NULL, -- 'Tecnico', 'Administrativo', 'Usuario Final'
+    id_departamento INT NULL
+);
+-- Tabla Equipos
+CREATE TABLE IF NOT EXISTS Equipos (
+    id_equipo INT PRIMARY KEY AUTO_INCREMENT,
+    numero_serie VARCHAR(100) NOT NULL,
+    modelo VARCHAR(100) NOT NULL,
+    tipo_equipo VARCHAR(50) NOT NULL, -- 'Computadora', 'Proyector', etc.
+    id_ubicacion INT NOT NULL
+);
+
+-- Tabla Configuraciones
+CREATE TABLE IF NOT EXISTS Configuraciones (
+    id_configuracion INT PRIMARY KEY AUTO_INCREMENT,
+    id_equipo INT NOT NULL,
+    procesador VARCHAR(100),
+    memoria_ram VARCHAR(50),
+    almacenamiento VARCHAR(100),
+    tarjeta_grafica VARCHAR(100),
+    sistema_operativo VARCHAR(100),
+    encargado VARCHAR(100) -- Red a la que está conectado
+    );
+
+-- Tabla tipoequipo
+CREATE TABLE IF NOT EXISTS tipoequipo (
+    id_tipoequipo INT PRIMARY KEY AUTO_INCREMENT,
+    tipo_equipo VARCHAR(100) NOT NULL
+);
+
+-- Tabla reportes
+CREATE TABLE IF NOT EXISTS reportes (
+    id_reporte INT PRIMARY KEY AUTO_INCREMENT,
+    ubicacion VARCHAR(100) NOT NULL,
+   equipo VARCHAR(100) NOT NULL,
+   descripcion VARCHAR(100) NOT NULL,
+  fecha Date NOT NULL,
+   hora  Time NOT NULL,
+  id_tecnico INT NULL,
+  estado VARCHAR(50) DEFAULT 'enviado'
+);
+
+-- Confirmar la transacción
+COMMIT;

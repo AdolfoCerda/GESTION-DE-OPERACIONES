@@ -1,0 +1,38 @@
+use reportes;
+
+INSERT INTO departamentos (id_departamento, nombre_departamento) VALUES 
+(1, 'sistemas');
+
+
+INSERT INTO usuarios (id_usuario, nombre_usuario, contrasena, tipo_usuario, id_departamento) VALUES 
+(1, 'sistemas', 'a', 'admin', 1), 
+(2, 'joaquin', 'a', 'tecnico', 1), 
+(3, 'marco', 'a', 'docente', 1);
+
+INSERT INTO edificios (id_edificio, nombre_edificio) VALUES 
+(1, 'Edificio A'),
+(2, 'Edificio B');
+
+INSERT INTO ubicaciones (id_ubicacion, nombre_ubicacion, id_edificio) VALUES 
+(1, 'Aula A1', 1),
+(2, 'Aula A2', 1),
+(3, 'Aula B1', 2),
+(4, 'Aula A2', 2);
+
+INSERT INTO ubicaciones_departamentos (id_ubicacion, id_departamento) VALUES 
+(1, 1),
+(2, 1),
+(3, 1),
+(4, 1);
+
+INSERT INTO tipoequipo (id_tipoequipo, tipo_equipo) VALUES 
+(1, 'Computadora'),
+(2, 'Impresora'),
+(3, 'Proyector');
+
+INSERT INTO equipos (id_equipo, numero_serie, modelo, tipo_equipo, id_ubicacion) VALUES
+(1, 123, 'HP1', 'Computadora', 1),
+(2, 456, 'CANON1', 'Proyector', 1);
+
+INSERT INTO configuraciones (id_configuracion, id_equipo, procesador, memoria_ram, almacenamiento, tarjeta_grafica, sistema_operativo, encargado) VALUES
+(1, 1, 'Intel Core i5 14400', '2x16GB ADATA DDR5 5600MTs', 'SSD KINGSTON SU400 1TB', 'AMD RADEON 7700XT', 'Windows 11', 'Mario Bastidas');
