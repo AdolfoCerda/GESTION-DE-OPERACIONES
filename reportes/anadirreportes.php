@@ -14,7 +14,7 @@ include 'config.php'; // Incluir la conexión a la base de datos
 date_default_timezone_set('America/Chihuahua'); // Puedes ajustar según tu ubicación específica
 
 // Obtener todas las ubicaciones existentes
-$sql_ubicaciones = "SELECT id_ubicacion, nombre_ubicacion FROM Ubicaciones";
+$sql_ubicaciones = "SELECT nombre_ubicacion FROM Ubicaciones";
 $result_ubicaciones = $conn->query($sql_ubicaciones);
 
 // Verificar si se ha enviado el formulario
@@ -56,7 +56,7 @@ ob_start();
     <select name="ubicacion" id="ubicacion">
         <option value="">-- Seleccionar ubicación --</option>
         <?php while ($row = $result_ubicaciones->fetch_assoc()): ?>
-            <option value="<?php echo $row['id_ubicacion']; ?>"><?php echo $row['nombre_ubicacion']; ?></option>
+            <option value="<?php echo $row['nombre_ubicacion']; ?>"><?php echo $row['nombre_ubicacion']; ?></option>
         <?php endwhile; ?>
     </select><br><br>
 
@@ -79,17 +79,17 @@ include 'layout.php';
 
 <script>
     document.getElementById('ubicacion').addEventListener('change', function () {
-        const ubicacionId = this.value;
+        const nombreUbicacion = this.value;
         const equipoSelect = document.getElementById('equipo');
         equipoSelect.innerHTML = '<option value="">-- Seleccionar equipo --</option>'; // Limpiar el campo
 
-        if (ubicacionId) {
+        if (nombreUbicacion) {
             fetch('getEquipos.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded'
                 },
-                body: 'id_ubicacion=' + ubicacionId
+                body: 'nombre_ubicacion=' + nombreUbicacion
             })
             .then(response => response.json())
             .then(data => {
