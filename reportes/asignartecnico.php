@@ -1,7 +1,6 @@
 <?php
 // Iniciar sesión
 session_start();
-include 'config.php'; // Incluir la conexión a la base de datos
 
 // Verificar si el usuario ha iniciado sesión
 if (!isset($_SESSION['usuario'])) {
@@ -9,186 +8,81 @@ if (!isset($_SESSION['usuario'])) {
     exit();
 }
 
-//obtener tipo de usuario
-$sql = "SELECT tipo_usuario FROM Usuarios WHERE nombre_usuario = ?";
-$stmt = $conn->prepare($sql);
-$stmt->bind_param("s", $_SESSION['usuario']);
-$stmt->execute();
-$result = $stmt->get_result();
-$tipo_usuario = $result->fetch_assoc()['tipo_usuario'];
-$stmt->close();
+include 'config.php'; // Conexión a la base de datos
 
-//obtener nombre de usuario
-$sql = "SELECT nombre_usuario FROM Usuarios WHERE nombre_usuario = ?";
-$stmt = $conn->prepare($sql);
-$stmt->bind_param("s", $_SESSION['usuario']);
-$stmt->execute();
-$result = $stmt->get_result();
-$nombre_usuario = $result->fetch_assoc()['nombre_usuario'];
-$stmt->close();
+// Verificar si se recibió el ID del reporte por POST
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id_reporte'])) {
+    $id_reporte = (int)$_POST['id_reporte'];
 
-// Por el momento, mostrar todos los reportes
+    // Obtener los técnicos disponibles
+    $sql_tecnicos = "SELECT id_usuario, nombre_usuario FROM Usuarios WHERE tipo_usuario = 'Tecnico'";
+    $result_tecnicos = $conn->query($sql_tecnicos);
 
-//
-
-if ($tipo_usuario == 'docente') {
-    $sql_reportes = "SELECT 
-    r.*,
-    u.nombre_ubicacion,
-    us.nombre_usuario
-    FROM 
-    reportes r
-    JOIN 
-    Ubicaciones u
-    ON 
-    r.ubicacion = u.id_ubicacion
-    LEFT JOIN 
-    Usuarios us
-    ON 
-    r.id_tecnico = us.id_usuario
-    WHERE r.reporta = ?";
-    $stmt_reportes = $conn->prepare($sql_reportes);
-    $stmt_reportes->bind_param("s", $nombre_usuario);
-    $stmt_reportes->execute();
-    $result_reportes = $stmt_reportes->get_result();
-} else {
-$sql_reportes = "SELECT 
-    r.*,
-    u.nombre_ubicacion,
-    us.nombre_usuario
-FROM 
-    reportes r
-JOIN 
-    Ubicaciones u
-ON 
-    r.ubicacion = u.id_ubicacion
-LEFT JOIN 
-    Usuarios us
-ON 
-    r.id_tecnico = us.id_usuario";
-$result_reportes = $conn->query($sql_reportes);
-}
-
-// Variables para mostrar el detalle del reporte
-$detalle_reporte = [];
-$id_reporte_seleccionado = null;
-
-// Verificar si se ha seleccionado un reporte
-if (isset($_GET['id_reporte']) && is_numeric($_GET['id_reporte'])) {
-    $id_reporte_seleccionado = (int)$_GET['id_reporte'];
-
-    // Obtener el detalle del reporte seleccionado
-    $sql_detalle_reporte = "SELECT 
-    r.*,
-    u.nombre_ubicacion,
-    us.nombre_usuario
-FROM 
-    reportes r
-JOIN 
-    Ubicaciones u
-ON 
-    r.ubicacion = u.id_ubicacion
-LEFT JOIN 
-    Usuarios us
-ON 
-    r.id_tecnico = us.id_usuario WHERE id_reporte = ?";
-    $stmt_detalle_reporte = $conn->prepare($sql_detalle_reporte);
-    $stmt_detalle_reporte->bind_param("i", $id_reporte_seleccionado);
-    $stmt_detalle_reporte->execute();
-    $result_detalle_reporte = $stmt_detalle_reporte->get_result();
-
-    if ($result_detalle_reporte->num_rows > 0) {
-        $detalle_reporte = $result_detalle_reporte->fetch_assoc();
+    if (!$result_tecnicos) {
+        die("Error al obtener técnicos: " . $conn->error);
     }
+
+    // Verificar si se han enviado el técnico y la prioridad seleccionados
+    if (isset($_POST['tecnico_seleccionado']) && isset($_POST['prioridad'])) {
+        $id_tecnico = (int)$_POST['tecnico_seleccionado'];
+        $prioridad = $_POST['prioridad']; // Baja, Media, Alta
+
+        // Actualizar el reporte con el técnico y la prioridad asignados
+        $sql_asignar = "UPDATE reportes SET id_tecnico = ?, prioridad = ? WHERE id_reporte = ?";
+        $stmt = $conn->prepare($sql_asignar);
+        $stmt->bind_param("isi", $id_tecnico, $prioridad, $id_reporte);
+
+        if ($stmt->execute()) {
+            // Redirigir a la lista de reportes
+            header("Location: reportes.php");
+            exit();
+        } else {
+            echo "Error al asignar el técnico y la prioridad: " . $stmt->error;
+        }
+    }
+} else {
+    die("No se recibió un ID de reporte válido.");
 }
 
-$title = "Reportes";
+// Configuración para el layout
+$title = "Asignar Técnico y Prioridad";
 ob_start();
 ?>
 
-<div class="row">
-    <div class="col text-end">
-        <a href="anadirreportes.php" class="btn btn-primary">Levantar Reporte</a>
+<div class="row mb-3">
+    <div class="col text-center">
+        <h2>Asignar Técnico y Prioridad al Reporte #<?= htmlspecialchars($id_reporte); ?></h2>
     </div>
 </div>
 
-<table class="table table-striped mt-3">
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Ubicación</th>
-            <th>Equipo</th>
-            <th>Descripción</th>
-            <th>Fecha</th>
-            <th>Hora</th>
-            <th>Técnico</th>
-            <th>Estado</th>
-        </tr>
-    </thead>
-    <tbody>
-        <?php while ($row = $result_reportes->fetch_assoc()): ?>
-            <tr>
-                <td><a href="reportes.php?id_reporte=<?= $row['id_reporte']; ?>"><?= $row['id_reporte']; ?></a></td>
-                <td><?= $row['nombre_ubicacion']; ?></td>
-                <td><?= $row['equipo']; ?></td>
-                <td><?= $row['descripcion']; ?></td>
-                <td><?= $row['fecha']; ?></td>
-                <td><?= $row['hora']; ?></td>
-                <td><?= $row['nombre_usuario'] ? $row['nombre_usuario'] : 'Pendiente por asignar'; ?></td>
-                <td><?= $row['estado']; ?></td>
-            </tr>
+<form method="POST" action="asignartecnico.php" class="container">
+    <input type="hidden" name="id_reporte" value="<?= htmlspecialchars($id_reporte); ?>">
+    
+    <!-- Combobox para seleccionar técnico -->
+    <label for="tecnico">Seleccionar Técnico:</label><br>
+    <select name="tecnico_seleccionado" id="tecnico" required>
+        <option value="">-- Seleccionar técnico --</option>
+        <?php while ($tecnico = $result_tecnicos->fetch_assoc()): ?>
+            <option value="<?= htmlspecialchars($tecnico['id_usuario']); ?>">
+                <?= htmlspecialchars($tecnico['nombre_usuario']); ?>
+            </option>
         <?php endwhile; ?>
-    </tbody>
-</table>
+    </select><br><br>
+    
+    <!-- Combobox para seleccionar prioridad -->
+    <label for="prioridad">Seleccionar Prioridad:</label><br>
+    <select name="prioridad" id="prioridad" required>
+        <option value="">-- Seleccionar prioridad --</option>
+        <option value="Baja">Baja</option>
+        <option value="Media">Media</option>
+        <option value="Alta">Alta</option>
+    </select><br><br>
 
-<?php if ($id_reporte_seleccionado): ?>
-    <h3 class="mt-5">Detalle del Reporte #<?= $id_reporte_seleccionado; ?></h3>
-    <?php if (!empty($detalle_reporte)): ?>
-        <table class="table table-bordered">
-            <thead>
-                <tr>
-                    <th>Ubicación</th>
-                    <th>Equipo</th>
-                    <th>Descripción</th>
-                    <th>Fecha</th>
-                    <th>Hora</th>
-                    <th>Técnico</th>
-                    <th>Prioridad</th>
-                    <th>Estado</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td><?= $detalle_reporte['nombre_ubicacion']; ?></td>
-                    <td><?= $detalle_reporte['equipo']; ?></td>
-                    <td><?= $detalle_reporte['descripcion']; ?></td>
-                    <td><?= $detalle_reporte['fecha']; ?></td>
-                    <td><?= $detalle_reporte['hora']; ?></td>
-                    <td>
-                        <?php if (empty($detalle_reporte['id_tecnico']) && $tipo_usuario == 'admin'): ?>
-                            <form method="POST" action="asignartecnico.php">
-                                <input type="hidden" name="id_reporte" value="<?= $id_reporte_seleccionado; ?>">
-                                <button type="submit" class="btn btn-primary btn-sm">Asignar Técnico</button>
-                            </form>
-                        <?php elseif (empty($detalle_reporte['id_tecnico'])): ?>
-                            Pendiente por asignar
-                        <?php else: ?>
-                            <?= $detalle_reporte['nombre_usuario']; ?>
-                        <?php endif; ?>
-                    </td>
-                    <td><?= $detalle_reporte['prioridad']; ?></td>
-                    <td><?= $detalle_reporte['estado']; ?></td>
-                </tr>
-            </tbody>
-        </table>
-    <?php else: ?>
-        <p>No se encontró el detalle del reporte seleccionado.</p>
-    <?php endif; ?>
-<?php endif; ?>
+    <button type="submit" class="btn btn-primary">Asignar Técnico y Prioridad</button>
+</form>
 
 <?php
 $content = ob_get_clean();
 include 'layout.php';
 $conn->close();
 ?>
-
