@@ -75,6 +75,7 @@ CREATE TABLE IF NOT EXISTS reportes (
    hora  Time NOT NULL,
   reporta VARCHAR(50) NOT NULL,
   id_tecnico INT NULL,
+  prioridad VARCHAR(50) NOT NULL,
   estado VARCHAR(50) DEFAULT 'enviado'
 );
 
