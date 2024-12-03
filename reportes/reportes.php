@@ -27,7 +27,10 @@ $result = $stmt->get_result();
 $nombre_usuario = $result->fetch_assoc()['nombre_usuario'];
 $stmt->close();
 
-//Mostrar reportes, si tipo usuario es docente solo mostrar sus reportes
+// Por el momento, mostrar todos los reportes
+
+//
+
 if ($tipo_usuario == 'docente') {
     $sql_reportes = "SELECT 
     r.*,
@@ -99,7 +102,6 @@ ON
     }
 }
 
-// Preparar el título y el contenido para incluir en el layout
 $title = "Reportes";
 ob_start();
 ?>
@@ -126,11 +128,7 @@ ob_start();
     <tbody>
         <?php while ($row = $result_reportes->fetch_assoc()): ?>
             <tr>
-                <?php if ($tipo_usuario == 'admin'): ?>
                 <td><a href="reportes.php?id_reporte=<?= $row['id_reporte']; ?>"><?= $row['id_reporte']; ?></a></td>
-                <?php else: ?>
-                <td><?= $row['id_reporte'] ?></td>
-                <?php endif; ?>
                 <td><?= $row['nombre_ubicacion']; ?></td>
                 <td><?= $row['equipo']; ?></td>
                 <td><?= $row['descripcion']; ?></td>
@@ -155,6 +153,7 @@ ob_start();
                     <th>Fecha</th>
                     <th>Hora</th>
                     <th>Técnico</th>
+                    <th>Prioridad</th>
                     <th>Estado</th>
                 </tr>
             </thead>
@@ -166,15 +165,18 @@ ob_start();
                     <td><?= $detalle_reporte['fecha']; ?></td>
                     <td><?= $detalle_reporte['hora']; ?></td>
                     <td>
-                        <?php if (empty($detalle_reporte['id_tecnico'])): ?>
+                        <?php if (empty($detalle_reporte['id_tecnico']) && $tipo_usuario == 'admin'): ?>
                             <form method="POST" action="asignartecnico.php">
                                 <input type="hidden" name="id_reporte" value="<?= $id_reporte_seleccionado; ?>">
                                 <button type="submit" class="btn btn-primary btn-sm">Asignar Técnico</button>
                             </form>
+                        <?php elseif (empty($detalle_reporte['id_tecnico'])): ?>
+                            Pendiente por asignar
                         <?php else: ?>
                             <?= $detalle_reporte['nombre_usuario']; ?>
                         <?php endif; ?>
                     </td>
+                    <td><?= $detalle_reporte['prioridad']; ?></td>
                     <td><?= $detalle_reporte['estado']; ?></td>
                 </tr>
             </tbody>
@@ -189,3 +191,4 @@ $content = ob_get_clean();
 include 'layout.php';
 $conn->close();
 ?>
+
