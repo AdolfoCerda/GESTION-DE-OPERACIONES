@@ -9,64 +9,66 @@ if (!isset($_SESSION['usuario'])) {
     exit();
 }
 
-//obtener tipo de usuario
-$sql = "SELECT tipo_usuario FROM Usuarios WHERE nombre_usuario = ?";
-$stmt = $conn->prepare($sql);
-$stmt->bind_param("s", $_SESSION['usuario']);
-$stmt->execute();
-$result = $stmt->get_result();
-$tipo_usuario = $result->fetch_assoc()['tipo_usuario'];
-$stmt->close();
-
-//obtener nombre de usuario
-$sql = "SELECT nombre_usuario FROM Usuarios WHERE nombre_usuario = ?";
-$stmt = $conn->prepare($sql);
-$stmt->bind_param("s", $_SESSION['usuario']);
-$stmt->execute();
-$result = $stmt->get_result();
-$nombre_usuario = $result->fetch_assoc()['nombre_usuario'];
-$stmt->close();
+$nombre_usuario = $_SESSION['usuario'];
+$tipo_usuario = $_SESSION['tipo_usuario'];
 
 // Por el momento, mostrar todos los reportes
-
-//
-
 if ($tipo_usuario == 'docente') {
     $sql_reportes = "SELECT 
-    r.*,
-    u.nombre_ubicacion,
-    us.nombre_usuario
+        r.*,
+        u.nombre_ubicacion,
+        us.nombre_usuario
     FROM 
-    reportes r
+        reportes r
     JOIN 
-    Ubicaciones u
+        Ubicaciones u
     ON 
-    r.ubicacion = u.id_ubicacion
+        r.ubicacion = u.id_ubicacion
     LEFT JOIN 
-    Usuarios us
+        Usuarios us
     ON 
-    r.id_tecnico = us.id_usuario
+        r.id_tecnico = us.id_usuario
     WHERE r.reporta = ?";
     $stmt_reportes = $conn->prepare($sql_reportes);
     $stmt_reportes->bind_param("s", $nombre_usuario);
     $stmt_reportes->execute();
     $result_reportes = $stmt_reportes->get_result();
-} else {
-$sql_reportes = "SELECT 
-    r.*,
-    u.nombre_ubicacion,
-    us.nombre_usuario
-FROM 
-    reportes r
-JOIN 
-    Ubicaciones u
-ON 
-    r.ubicacion = u.id_ubicacion
-LEFT JOIN 
-    Usuarios us
-ON 
-    r.id_tecnico = us.id_usuario";
-$result_reportes = $conn->query($sql_reportes);
+} elseif ($tipo_usuario == 'tecnico') {
+    $sql_reportes = "SELECT 
+        r.*,
+        u.nombre_ubicacion,
+        us.nombre_usuario
+    FROM 
+        reportes r
+    JOIN 
+        Ubicaciones u
+    ON 
+        r.ubicacion = u.id_ubicacion
+    LEFT JOIN 
+        Usuarios us
+    ON 
+        r.id_tecnico = us.id_usuario
+    WHERE us.nombre_usuario = ?";
+    $stmt_reportes = $conn->prepare($sql_reportes);
+    $stmt_reportes->bind_param("s", $nombre_usuario);
+    $stmt_reportes->execute();
+    $result_reportes = $stmt_reportes->get_result();
+} else { // admin
+    $sql_reportes = "SELECT 
+        r.*,
+        u.nombre_ubicacion,
+        us.nombre_usuario
+    FROM 
+        reportes r
+    JOIN 
+        Ubicaciones u
+    ON 
+        r.ubicacion = u.id_ubicacion
+    LEFT JOIN 
+        Usuarios us
+    ON 
+        r.id_tecnico = us.id_usuario";
+    $result_reportes = $conn->query($sql_reportes);
 }
 
 // Variables para mostrar el detalle del reporte
@@ -108,7 +110,9 @@ ob_start();
 
 <div class="row">
     <div class="col text-end">
-        <a href="anadirreportes.php" class="btn btn-primary">Levantar Reporte</a>
+        <?php if ($tipo_usuario === 'admin' || $tipo_usuario === 'docente'): ?>
+            <a href="anadirreportes.php" class="btn btn-primary">Levantar Reporte</a>
+        <?php endif; ?>
     </div>
 </div>
 
@@ -128,7 +132,7 @@ ob_start();
     <tbody>
         <?php while ($row = $result_reportes->fetch_assoc()): ?>
             <tr>
-                <td><a href="reportes.php?id_reporte=<?= $row['id_reporte']; ?>"><?= $row['id_reporte']; ?></a></td>
+                <td><a href="reportes.php?id_reporte=<?= $row['id_reporte']; ?>"><?= $row['id_reporte']; ?> <i class="bi bi-pencil-square"></i></a></td>
                 <td><?= $row['nombre_ubicacion']; ?></td>
                 <td><?= $row['equipo']; ?></td>
                 <td><?= $row['descripcion']; ?></td>
@@ -191,4 +195,3 @@ $content = ob_get_clean();
 include 'layout.php';
 $conn->close();
 ?>
-
