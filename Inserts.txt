@@ -36,3 +36,10 @@ INSERT INTO equipos (id_equipo, numero_serie, modelo, tipo_equipo, id_ubicacion)
 
 INSERT INTO configuraciones (id_configuracion, id_equipo, procesador, memoria_ram, almacenamiento, tarjeta_grafica, sistema_operativo, encargado) VALUES
 (1, 1, 'Intel Core i5 14400', '2x16GB ADATA DDR5 5600MTs', 'SSD KINGSTON SU400 1TB', 'AMD RADEON 7700XT', 'Windows 11', 'Mario Bastidas');
+
+
+INSERT INTO servicios (nombre, tiempo_estimado) VALUES 
+('Cambio de Mouse', 30),
+('Cambio de Disco Duro', 30),
+('Reemplazo de Equipo Completo', 30),
+('Instalación de Software', 30);
