@@ -18,7 +18,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if ($result->num_rows > 0) {
         // Usuario y contraseña correctos
         session_start();
+        $row = $result->fetch_assoc();
         $_SESSION['usuario'] = $usuario; // Guardar el nombre de usuario en la sesión
+        $_SESSION['tipo_usuario'] = $row['tipo_usuario'];
         header("Location: inicio.php");
         exit();
     } else {
