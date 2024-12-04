@@ -1,4 +1,4 @@
-CREATE DATABASE IF NOT EXISTS REPORTES;
+ CREATE DATABASE IF NOT EXISTS REPORTES;
 USE REPORTES;
 
 -- Iniciar una transacción
@@ -77,6 +77,13 @@ CREATE TABLE IF NOT EXISTS reportes (
   id_tecnico INT NULL,
   prioridad VARCHAR(50) NOT NULL,
   estado VARCHAR(50) DEFAULT 'enviado'
+);
+
+-- Tabla servicios
+CREATE TABLE IF NOT EXISTS servicios (
+    id_servicio INT PRIMARY KEY AUTO_INCREMENT,
+    nombre VARCHAR(50) NOT NULL,
+    tiempo_estimado INT NOT NULL
 );
 
 -- Confirmar la transacción
