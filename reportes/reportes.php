@@ -12,8 +12,8 @@ if (!isset($_SESSION['usuario'])) {
 $nombre_usuario = $_SESSION['usuario'];
 $tipo_usuario = $_SESSION['tipo_usuario'];
 
-// Por el momento, mostrar todos los reportes
-if ($tipo_usuario == 'docente') {
+// Mostrar reportes dependiendo el usuario
+if ($tipo_usuario == 'docente') {// A docentes solo muestra los reportes que ha levantado
     $sql_reportes = "SELECT 
         r.*,
         u.nombre_ubicacion,
@@ -33,7 +33,7 @@ if ($tipo_usuario == 'docente') {
     $stmt_reportes->bind_param("s", $nombre_usuario);
     $stmt_reportes->execute();
     $result_reportes = $stmt_reportes->get_result();
-} elseif ($tipo_usuario == 'tecnico') {
+} elseif ($tipo_usuario == 'tecnico') {// A tecnicos solo muestra reportes donde fue asignado
     $sql_reportes = "SELECT 
         r.*,
         u.nombre_ubicacion,
@@ -53,7 +53,7 @@ if ($tipo_usuario == 'docente') {
     $stmt_reportes->bind_param("s", $nombre_usuario);
     $stmt_reportes->execute();
     $result_reportes = $stmt_reportes->get_result();
-} else { // admin
+} else {// A admin muestra todos los reportes
     $sql_reportes = "SELECT 
         r.*,
         u.nombre_ubicacion,
@@ -110,7 +110,8 @@ ob_start();
 
 <div class="row">
     <div class="col text-end">
-        <?php if ($tipo_usuario === 'admin' || $tipo_usuario === 'docente'): ?>
+        <h2 style="text-align: center;">Reportes</h2>
+        <?php if ($tipo_usuario === 'docente'): ?>
             <a href="anadirreportes.php" class="btn btn-primary">Levantar Reporte</a>
         <?php endif; ?>
     </div>
