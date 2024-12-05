@@ -10,6 +10,8 @@ if (!isset($_SESSION['usuario'])) {
 
 include 'config.php'; // Incluir la conexión a la base de datos
 
+$tipo_usuario = $_SESSION['tipo_usuario'];
+
 // Eliminar ubicación si se envía un ID para eliminar
 if (isset($_POST['eliminar'])) {
     $id_ubicacion = $_POST['id_ubicacion'];
@@ -44,7 +46,10 @@ ob_start();
 
 <div class="row">
     <div class="col text-end">
-        <a href="anadirubicaciones.php" class="btn btn-primary">Añadir Ubicación</a>
+        <h2 style="text-align: center;">Ubicaciones</h2>
+        <?php if ($tipo_usuario === 'admin'): ?>
+            <a href="anadirubicaciones.php" class="btn btn-primary">Añadir Ubicación</a>
+        <?php endif; ?>
     </div>
 </div>
 
@@ -54,7 +59,9 @@ ob_start();
             <th>Nombre</th>
             <th>Edificio</th>
             <th>Departamento</th>
-            <th>Acciones</th>
+            <?php if ($tipo_usuario === 'admin'): ?>
+                <th>Acciones</th>
+            <?php endif; ?>
         </tr>
     </thead>
     <tbody>
@@ -67,9 +74,12 @@ ob_start();
                 echo "<td>" . $row['nombre_departamento'] . "</td>";
                 echo '<td>
                         <form method="POST" action="ubicaciones.php" onsubmit="return confirm(\'¿Estás seguro de que deseas eliminar esta ubicación?\');">
-                            <input type="hidden" name="id_ubicacion" value="' . $row['id_ubicacion'] . '">
-                            <button type="submit" name="eliminar" class="btn btn-danger btn-sm">Eliminar</button>
-                        </form>
+                            <input type="hidden" name="id_ubicacion" value="' . $row['id_ubicacion'] . '"> ';
+                            if ($tipo_usuario === 'admin') {
+                                echo '<button type="submit" name="eliminar" class="btn btn-danger btn-sm">Eliminar</button>';
+                            }
+                            
+                        echo '</form>
                     </td>';
                 echo "</tr>";
             }
