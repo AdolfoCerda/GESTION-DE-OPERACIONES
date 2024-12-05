@@ -15,8 +15,19 @@ if (!isset($_GET['id_ubicacion']) && !isset($_POST['id_ubicacion'])) {
     exit();
 }
 
+$tipo_usuario = $_SESSION['tipo_usuario'];
+
 // Obtener el id_ubicacion desde GET o POST
 $id_ubicacion = isset($_GET['id_ubicacion']) ? $_GET['id_ubicacion'] : $_POST['id_ubicacion'];
+// Obtener el nombre_ubicacion consuldando con id_ubicacion
+$sql = "SELECT nombre_ubicacion FROM Ubicaciones WHERE id_ubicacion = ?";
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("i", $id_ubicacion);
+$stmt->execute();
+$result = $stmt->get_result();
+$row = $result->fetch_assoc();
+$nombre_ubicacion = $row['nombre_ubicacion'];
+
 
 // Eliminar equipo si se envía un número de serie para eliminar
 if (isset($_POST['eliminar'])) {
@@ -81,9 +92,11 @@ ob_start();
 ?>
 
 <div class="row mb-3">
-    <div class="col text-center">
-        <h2>Equipos en la Ubicación</h2>
-        <a href="anadirequipos.php?id_ubicacion=<?php echo $id_ubicacion; ?>" class="btn btn-primary">Añadir Equipo</a>
+    <div class="col text-end">
+        <h2 style="text-align: center;">Equipos en <?php echo $nombre_ubicacion; ?></h2>
+        <?php if ($tipo_usuario === 'admin'): ?>
+            <a href="anadirequipos.php?id_ubicacion=<?php echo $id_ubicacion; ?>" class="btn btn-primary">Añadir Equipo</a>
+        <?php endif; ?>
     </div>
 </div>
 
@@ -93,7 +106,9 @@ ob_start();
             <th>No. Serie</th>
             <th>Modelo</th>
             <th>Tipo</th>
-            <th>Acciones</th>
+            <?php if ($tipo_usuario === 'admin'): ?>
+                <th>Acciones</th>
+            <?php endif; ?>
         </tr>
     </thead>
     <tbody>
@@ -113,7 +128,9 @@ ob_start();
                         <form method="POST" action="equipos.php" onsubmit="return confirm('¿Estás seguro de que deseas eliminar este equipo?');">
                             <input type="hidden" name="numero_serie" value="<?php echo $row['numero_serie']; ?>">
                             <input type="hidden" name="id_ubicacion" value="<?php echo $id_ubicacion; ?>">
-                            <button type="submit" name="eliminar" class="btn btn-danger">Eliminar</button>
+                            <?php if ($tipo_usuario == 'admin'): ?>
+                                <button type="submit" name="eliminar" class="btn btn-danger">Eliminar</button>
+                            <?php endif; ?>
                         </form>
                     </td>
                 </tr>
@@ -125,7 +142,7 @@ ob_start();
 </table>
 
 <?php if ($id_equipo_seleccionado): ?>
-    <h3 class="mt-5">Configuración del Equipo <?php echo $numero_serie_seleccionado; ?></h3>
+    <h2 class="mt-5" style="text-align: center;">Configuración del Equipo <?php echo $numero_serie_seleccionado; ?></h2>
     <?php if (!empty($configuracion)): ?>
         <table class="table table-bordered">
             <thead class="thead-light">
