@@ -131,6 +131,7 @@ ob_start();
         </tr>
     </thead>
     <tbody>
+    <?php if ($result_reportes->num_rows > 0): ?>
         <?php while ($row = $result_reportes->fetch_assoc()): ?>
             <tr>
                 <td><a href="reportes.php?id_reporte=<?= $row['id_reporte']; ?>"><?= $row['id_reporte']; ?> <i class="bi bi-pencil-square"></i></a></td>
@@ -143,6 +144,9 @@ ob_start();
                 <td><?= $row['estado']; ?></td>
             </tr>
         <?php endwhile; ?>
+    <?php else: ?>
+        <tr><td colspan="8" class="text-center">No hay reportes levantados.</td></tr>
+    <?php endif; ?>
     </tbody>
 </table>
 
