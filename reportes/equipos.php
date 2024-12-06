@@ -152,6 +152,7 @@ ob_start();
                     <th>Almacenamiento</th>
                     <th>Tarjeta Gráfica</th>
                     <th>Sistema Operativo</th>
+                    <th>Programas Instalados</th>
                     <th>Encargado</th>
                 </tr>
             </thead>
@@ -163,6 +164,7 @@ ob_start();
                 <td><?php echo $config['almacenamiento']; ?></td>
                 <td><?php echo $config['tarjeta_grafica']; ?></td>
                 <td><?php echo $config['sistema_operativo']; ?></td>
+                <td><?php echo $config['programas']; ?></td>
                 <td><?php echo $config['encargado']; ?></td>
                 </tr>
                 <?php endforeach; ?>
