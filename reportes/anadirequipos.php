@@ -23,13 +23,14 @@ $result_tipos_equipo = $conn->query($sql_tipos_equipo);
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // Obtener los valores del formulario
     $numero_serie = $_POST['numero_serie'];
+    $marca = $_POST['marca'];
     $modelo = $_POST['modelo'];
     $tipo_equipo = $_POST['tipo_equipo']; // Aquí estás obteniendo el nombre del tipo de equipo
 
     // Insertar los datos en la tabla 'equipos', omitiendo el id_equipo para que se genere automáticamente
-    $sql_insert_equipo = "INSERT INTO equipos (numero_serie, modelo, tipo_equipo, id_ubicacion) VALUES (?, ?, ?, ?)";
+    $sql_insert_equipo = "INSERT INTO equipos (numero_serie, marca, modelo, tipo_equipo, id_ubicacion) VALUES (?, ?, ?, ?, ?)";
     $stmt_insert = $conn->prepare($sql_insert_equipo);
-    $stmt_insert->bind_param("sssi", $numero_serie, $modelo, $tipo_equipo, $id_ubicacion);
+    $stmt_insert->bind_param("ssssi", $numero_serie, $marca, $modelo, $tipo_equipo, $id_ubicacion);
     $stmt_insert->execute();
 
     // Obtener el id del equipo recién insertado
@@ -61,6 +62,11 @@ ob_start();
     <div class="form-group">
         <label for="numero_serie">Número de Serie:</label>
         <input type="text" name="numero_serie" class="form-control" placeholder="Número de Serie" required>
+    </div>
+
+    <div class="form-group mt-3">
+        <label for="marca">Marca:</label>
+        <input type="text" name="marca" class="form-control" placeholder="Marca" required>
     </div>
 
     <div class="form-group mt-3">
