@@ -100,8 +100,8 @@ ob_start();
     </div>
 </div>
 
-<table class="table table-bordered mt-4">
-    <thead class="thead-light">
+<table class="table table-striped mt-3">
+    <thead>
         <tr>
             <th>No. Serie</th>
             <th>Modelo</th>
@@ -144,7 +144,7 @@ ob_start();
 <?php if ($id_equipo_seleccionado): ?>
     <h2 class="mt-5" style="text-align: center;">Configuración del Equipo <?php echo $numero_serie_seleccionado; ?></h2>
     <?php if (!empty($configuracion)): ?>
-        <table class="table table-bordered">
+        <table class="table table-striped mt-3">
             <thead class="thead-light">
                 <tr>
                     <th>Procesador</th>
