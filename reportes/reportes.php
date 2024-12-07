@@ -123,21 +123,29 @@ if (isset($_GET['id_reporte']) && is_numeric($_GET['id_reporte'])) {
                 <tr>
                     <th>Técnico:</th>
                     <td>
-                        <?php if (empty($detalle_reporte['id_tecnico']) && $tipo_usuario == 'admin'): ?>
-                            <form method="POST" action="asignartecnico.php">
-                                <input type="hidden" name="id_reporte" value="<?= $id_reporte_seleccionado; ?>">
-                                <button type="submit" class="btn btn-primary btn-sm">Asignar Técnico</button>
-                            </form>
-                        <?php elseif (empty($detalle_reporte['id_tecnico'])): ?>
-                            Pendiente por asignar
-                        <?php else: ?>
-                            <?= $detalle_reporte['nombre_usuario']; ?>
-                        <?php endif; ?>
+                        <select name="tecnico_seleccionado" id="tecnico_seleccionado" required>
+                            <option value="">-- Seleccionar técnico --</option>
+                            <?php
+                            $sql_tecnicos = "SELECT id_usuario, nombre_usuario FROM Usuarios WHERE tipo_usuario = 'Tecnico'";
+                            $result_tecnicos = $conn->query($sql_tecnicos);
+                            while ($tecnico = $result_tecnicos->fetch_assoc()): ?>
+                                <option value="<?= $tecnico['id_usuario']; ?>" 
+                                    <?= $detalle_reporte['id_tecnico'] == $tecnico['id_usuario'] ? 'selected' : ''; ?>>
+                                    <?= $tecnico['nombre_usuario']; ?>
+                                </option>
+                            <?php endwhile; ?>
+                        </select>
                     </td>
                 </tr>
                 <tr>
                     <th>Prioridad:</th>
-                    <td><?= $detalle_reporte['prioridad']; ?></td>
+                    <td>
+                        <select name="prioridad" id="prioridad" required>
+                            <option value="Baja" <?= $detalle_reporte['prioridad'] === 'Baja' ? 'selected' : ''; ?>>Baja</option>
+                            <option value="Media" <?= $detalle_reporte['prioridad'] === 'Media' ? 'selected' : ''; ?>>Media</option>
+                            <option value="Alta" <?= $detalle_reporte['prioridad'] === 'Alta' ? 'selected' : ''; ?>>Alta</option>
+                        </select>
+                    </td>
                 </tr>
                 <tr>
                     <th>Estado:</th>
@@ -146,6 +154,12 @@ if (isset($_GET['id_reporte']) && is_numeric($_GET['id_reporte'])) {
             </tbody>
         </table>
 
+        <!-- Botón para guardar cambios -->
+        <div style="text-align: center; margin-top: 20px;">
+            <input type="hidden" name="id_reporte" value="<?= htmlspecialchars($id_reporte_seleccionado); ?>">
+            <button type="button" class="btn btn-success" onclick="guardarCambios()">Guardar Cambios</button>
+            <div id="guardarMensaje" style="margin-top: 15px;"></div>
+        </div>
         <?php
         exit;
     } else {
@@ -249,40 +263,11 @@ ob_start();
     .close:hover {
         color: darkred;
     }
-    .detalle-table {
-    width: 100%;
-    border-collapse: collapse; /* Eliminar bordes de la tabla */
-    margin: 20px 0;
-    background-color: #f9f9f9; /* Fondo gris claro para toda la tabla */
-    border-radius: 8px; /* Bordes redondeados */
-    overflow: hidden; /* Para asegurar que los bordes redondeados se apliquen */
-    }
 
-    .detalle-table th {
+    .detalle-table th, .detalle-table td {
         text-align: left;
-        font-size: 18px;
-        font-weight: bold;
-        padding: 10px 15px;
-        color: #333; /* Texto gris oscuro para los encabezados */
-        background-color: #e0e0e0; /* Fondo gris claro para los encabezados */
-        border-bottom: 1px solid #d0d0d0; /* Línea divisoria sutil */
+        padding: 10px;
     }
-
-    .detalle-table td {
-        font-size: 16px;
-        padding: 10px 15px;
-        color: #555; /* Texto gris medio para los datos */
-        background-color: #f5f5f5; /* Fondo ligeramente más claro para los datos */
-    }
-
-    .detalle-table tr:nth-child(even) td {
-        background-color: #f0f0f0; /* Alternar fondo para filas pares */
-    }
-
-    .detalle-table tr:last-child td {
-        border-bottom: none; /* Eliminar la línea inferior de la última fila */
-    }
-
 </style>
 
 <script>
@@ -290,13 +275,8 @@ ob_start();
         fetch(`reportes.php?id_reporte=${idReporte}`)
             .then(response => response.text())
             .then(data => {
-                // Actualizar el título del modal
                 document.getElementById('detalleTitulo').textContent = `Detalle del Reporte #${idReporte}`;
-                
-                // Insertar el contenido del detalle dentro del modal
                 document.getElementById('detalleContenido').innerHTML = data;
-                
-                // Mostrar el modal
                 document.getElementById('detalleModal').style.display = 'block';
             })
             .catch(error => console.error('Error:', error));
@@ -304,6 +284,39 @@ ob_start();
 
     function cerrarModal() {
         document.getElementById('detalleModal').style.display = 'none';
+    }
+
+    function guardarCambios() {
+        const idReporte = document.querySelector('#detalleModal input[name="id_reporte"]').value;
+        const tecnicoSeleccionado = document.getElementById('tecnico_seleccionado').value;
+        const prioridad = document.getElementById('prioridad').value;
+        const mensajeDiv = document.getElementById('guardarMensaje');
+
+        if (!tecnicoSeleccionado || !prioridad) {
+            mensajeDiv.innerHTML = '<p style="color: red;">Por favor, selecciona un técnico y una prioridad.</p>';
+            return;
+        }
+
+        fetch('asignartecnico.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `id_reporte=${encodeURIComponent(idReporte)}&tecnico_seleccionado=${encodeURIComponent(tecnicoSeleccionado)}&prioridad=${encodeURIComponent(prioridad)}`,
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                mensajeDiv.innerHTML = `<p style="color: green;">${data.message}</p>`;
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                mensajeDiv.innerHTML = `<p style="color: red;">${data.message}</p>`;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            mensajeDiv.innerHTML = '<p style="color: red;">Ocurrió un error al guardar los cambios.</p>';
+        });
     }
 </script>
 
