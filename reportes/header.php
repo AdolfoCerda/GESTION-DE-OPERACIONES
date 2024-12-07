@@ -17,6 +17,8 @@
                 <li class="nav-item"><a href="inicio.php" class="nav-link">Inicio</a></li>
                 <li class="nav-item"><a href="ubicaciones.php" class="nav-link">Ubicaciones y Equipos</a></li>
                 <li class="nav-item"><a href="reportes.php" class="nav-link">Reportes</a></li>
+                <li class="nav-item"><a href="servicios.php" class="nav-link">Catálogo de Servicios</a></li>
+                <li class="nav-item"><a href="problemas.php" class="nav-link">Tabla de Conocimientos</a></li>
                 <li class="nav-item"><a href="logout.php" class="nav-link">Cerrar Sesión</a></li>
             </ul>
         </nav>
