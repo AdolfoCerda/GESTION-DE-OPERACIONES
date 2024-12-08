@@ -126,7 +126,7 @@ if (isset($_GET['id_reporte']) && is_numeric($_GET['id_reporte'])) {
                 </tr>
                 <tr>
                     <th>Área:</th>
-                    <!-- Si prioridad no se ha asignado y es admin, seleccionar -->
+                    <!-- Si area no se ha asignado y es admin, seleccionar -->
                     <?php if ($detalle_reporte['id_area'] === null && $tipo_usuario === 'admin'): ?>
                     <td>
                         <select name="area_seleccionada" id="area_seleccionada" required>
@@ -143,11 +143,11 @@ if (isset($_GET['id_reporte']) && is_numeric($_GET['id_reporte'])) {
                         </select>
                     </td>
                     <?php endif; ?>
-                    <!-- Si tecnico no se ha asignado y no es admin, pendiente -->
+                    <!-- Si area no se ha asignado y no es admin, pendiente -->
                     <?php if ($detalle_reporte['id_area'] === null && $tipo_usuario !== 'admin'): ?>
                         <td>Pendiente por asignar</td>
                     <?php endif; ?>
-                    <!-- Si tecnico se asingó, mostrar -->
+                    <!-- Si area se asignó, mostrar -->
                     <?php if ($detalle_reporte['id_area'] !== null): ?>
                         <?php
                         //Obtener nombre_area con id_area
@@ -190,15 +190,6 @@ if (isset($_GET['id_reporte']) && is_numeric($_GET['id_reporte'])) {
                     <td>
                         <select name="tecnico_seleccionado" id="tecnico_seleccionado" required>
                             <option value="">-- Seleccionar técnico --</option>
-                            <?php
-                            $sql_tecnicos = "SELECT id_usuario, nombre_usuario FROM Usuarios WHERE tipo_usuario = 'Tecnico'";
-                            $result_tecnicos = $conn->query($sql_tecnicos);
-                            while ($tecnico = $result_tecnicos->fetch_assoc()): ?>
-                                <option value="<?= $tecnico['id_usuario']; ?>" 
-                                    <?= $detalle_reporte['id_tecnico'] == $tecnico['id_usuario'] ? 'selected' : ''; ?>>
-                                    <?= $tecnico['nombre_usuario']; ?>
-                                </option>
-                            <?php endwhile; ?>
                         </select>
                     </td>
                     <?php endif; ?>
@@ -206,7 +197,7 @@ if (isset($_GET['id_reporte']) && is_numeric($_GET['id_reporte'])) {
                     <?php if ($detalle_reporte['id_tecnico'] === null && $tipo_usuario !== 'admin'): ?>
                         <td>Pendiente por asignar</td>
                     <?php endif; ?>
-                    <!-- Si tecnico se asingó, mostrar -->
+                    <!-- Si tecnico se asignó, mostrar -->
                     <?php if ($detalle_reporte['id_tecnico'] !== null): ?>
                         <?php
                         //Obtener nombre_usuario de usuarios donde id_usuario = id_tecnico
@@ -349,14 +340,49 @@ ob_start();
 
 <script>
     function mostrarModal(idReporte) {
-        fetch(`reportes.php?id_reporte=${idReporte}`)
-            .then(response => response.text())
-            .then(data => {
-                document.getElementById('detalleTitulo').textContent = `Detalle del Reporte #${idReporte}`;
-                document.getElementById('detalleContenido').innerHTML = data;
-                document.getElementById('detalleModal').style.display = 'block';
-            })
-            .catch(error => console.error('Error:', error));
+    fetch(`reportes.php?id_reporte=${idReporte}`)
+        .then(response => response.text())
+        .then(data => {
+            document.getElementById('detalleTitulo').textContent = `Detalle del Reporte #${idReporte}`;
+            document.getElementById('detalleContenido').innerHTML = data;
+            document.getElementById('detalleModal').style.display = 'block';
+
+            // Mover el código del event listener AQUÍ:
+            const areaSelect = document.getElementById('area_seleccionada');
+            if (areaSelect) {
+                areaSelect.addEventListener('change', function () {
+                    const idArea = this.value;
+                    const tecnicoSelect = document.getElementById('tecnico_seleccionado');
+                    tecnicoSelect.innerHTML = '<option value="">-- Seleccionar técnico --</option>'; // Clear options
+
+                    if (idArea) {
+                        fetch('getTecnicos.php', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                            body: 'id_area=' + encodeURIComponent(idArea)
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.mensaje) {
+                                tecnicoSelect.innerHTML = '<option value="">' + data.mensaje + '</option>';
+                            } else {
+                                data.forEach(tecnico => {
+                                    const option = document.createElement('option');
+                                    option.value = tecnico.id_usuario;
+                                    option.textContent = tecnico.nombre_usuario;
+                                    tecnicoSelect.appendChild(option);
+                                });
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            tecnicoSelect.innerHTML = '<option value="">Error al cargar técnicos</option>';
+                        });
+                    }
+                });
+            }
+        })
+        .catch(error => console.error('Error:', error));
     }
 
     function cerrarModal() {
