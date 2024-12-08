@@ -121,7 +121,72 @@ if (isset($_GET['id_reporte']) && is_numeric($_GET['id_reporte'])) {
                     <td><?= $detalle_reporte['hora']; ?></td>
                 </tr>
                 <tr>
+                    <th>Dirigirse con:</th>
+                    <td><?= $detalle_reporte['reporta']; ?></td>
+                </tr>
+                <tr>
+                    <th>Área:</th>
+                    <!-- Si prioridad no se ha asignado y es admin, seleccionar -->
+                    <?php if ($detalle_reporte['id_area'] === null && $tipo_usuario === 'admin'): ?>
+                    <td>
+                        <select name="area_seleccionada" id="area_seleccionada" required>
+                            <option value="">-- Seleccionar área --</option>
+                            <?php
+                            $sql_areas = "SELECT id_area, nombre_area FROM areas";
+                            $result_areas = $conn->query($sql_areas);
+                            while ($area = $result_areas->fetch_assoc()): ?>
+                                <option value="<?= $area['id_area']; ?>" 
+                                    <?= $detalle_reporte['id_area'] == $area['id_area'] ? 'selected' : ''; ?>>
+                                    <?= $area['nombre_area']; ?>
+                                </option>
+                            <?php endwhile; ?>
+                        </select>
+                    </td>
+                    <?php endif; ?>
+                    <!-- Si tecnico no se ha asignado y no es admin, pendiente -->
+                    <?php if ($detalle_reporte['id_area'] === null && $tipo_usuario !== 'admin'): ?>
+                        <td>Pendiente por asignar</td>
+                    <?php endif; ?>
+                    <!-- Si tecnico se asingó, mostrar -->
+                    <?php if ($detalle_reporte['id_area'] !== null): ?>
+                        <?php
+                        //Obtener nombre_area con id_area
+                        $sql = "SELECT nombre_area FROM areas WHERE id_area = ?";
+                        $stmt = $conn->prepare($sql);
+                        $stmt->bind_param("i", $detalle_reporte['id_area']);
+                        $stmt->execute();
+                        $result = $stmt->get_result();
+                        $nombreArea = $result->fetch_assoc()['nombre_area'];
+                        ?>
+                        <td><?=$nombreArea?></td>
+                    <?php endif; ?>
+                </tr>
+                <tr>
+                    <th>Prioridad:</th>
+                    <!-- Si prioridad no se ha asignado y es admin, seleccionar -->
+                    <?php if ($detalle_reporte['prioridad'] === '' && $tipo_usuario === 'admin'): ?>
+                    <td>
+                        <select name="prioridad" id="prioridad" required>
+                            <option value="">-- Seleccionar prioridad --</option>
+                            <option value="Baja" <?= $detalle_reporte['prioridad'] === 'Baja' ? 'selected' : ''; ?>>Baja</option>
+                            <option value="Media" <?= $detalle_reporte['prioridad'] === 'Media' ? 'selected' : ''; ?>>Media</option>
+                            <option value="Alta" <?= $detalle_reporte['prioridad'] === 'Alta' ? 'selected' : ''; ?>>Alta</option>
+                        </select>
+                    </td>
+                    <?php endif; ?>
+                    <!-- Si prioridad no se ha asignado y no es admin, pendiente -->
+                    <?php if ($detalle_reporte['prioridad'] === '' && $tipo_usuario !== 'admin'): ?>
+                        <td>Pendiente por asignar</td>
+                    <?php endif; ?>
+                    <!-- Si prioridad se asignó, mostrar -->
+                    <?php if ($detalle_reporte['prioridad'] !== ''): ?>
+                        <td><?= $detalle_reporte['prioridad']; ?></td>
+                    <?php endif; ?>
+                </tr>
+                <tr>
                     <th>Técnico:</th>
+                    <!-- Si tecnico no se ha asignado y es admin, seleccionar -->
+                    <?php if ($detalle_reporte['id_tecnico'] === null && $tipo_usuario === 'admin'): ?>
                     <td>
                         <select name="tecnico_seleccionado" id="tecnico_seleccionado" required>
                             <option value="">-- Seleccionar técnico --</option>
@@ -136,16 +201,24 @@ if (isset($_GET['id_reporte']) && is_numeric($_GET['id_reporte'])) {
                             <?php endwhile; ?>
                         </select>
                     </td>
-                </tr>
-                <tr>
-                    <th>Prioridad:</th>
-                    <td>
-                        <select name="prioridad" id="prioridad" required>
-                            <option value="Baja" <?= $detalle_reporte['prioridad'] === 'Baja' ? 'selected' : ''; ?>>Baja</option>
-                            <option value="Media" <?= $detalle_reporte['prioridad'] === 'Media' ? 'selected' : ''; ?>>Media</option>
-                            <option value="Alta" <?= $detalle_reporte['prioridad'] === 'Alta' ? 'selected' : ''; ?>>Alta</option>
-                        </select>
-                    </td>
+                    <?php endif; ?>
+                    <!-- Si tecnico no se ha asignado y no es admin, pendiente -->
+                    <?php if ($detalle_reporte['id_tecnico'] === null && $tipo_usuario !== 'admin'): ?>
+                        <td>Pendiente por asignar</td>
+                    <?php endif; ?>
+                    <!-- Si tecnico se asingó, mostrar -->
+                    <?php if ($detalle_reporte['id_tecnico'] !== null): ?>
+                        <?php
+                        //Obtener nombre_usuario de usuarios donde id_usuario = id_tecnico
+                        $sql = "SELECT nombre_usuario FROM Usuarios WHERE id_usuario = ?";
+                        $stmt = $conn->prepare($sql);
+                        $stmt->bind_param("i", $detalle_reporte['id_tecnico']);
+                        $stmt->execute();
+                        $result = $stmt->get_result();
+                        $nombreTecnico = $result->fetch_assoc()['nombre_usuario'];
+                        ?>
+                        <td><?=$nombreTecnico?></td>
+                    <?php endif; ?>
                 </tr>
                 <tr>
                     <th>Estado:</th>
@@ -155,11 +228,15 @@ if (isset($_GET['id_reporte']) && is_numeric($_GET['id_reporte'])) {
         </table>
 
         <!-- Botón para guardar cambios -->
+         <!-- Si es admin y area, prioridad y tecnico son nulos-->
+          <?php if ($detalle_reporte['id_area'] === null && $detalle_reporte['prioridad'] === '' && $detalle_reporte['id_tecnico'] === null && $tipo_usuario === 'admin'): ?>
         <div style="text-align: center; margin-top: 20px;">
             <input type="hidden" name="id_reporte" value="<?= htmlspecialchars($id_reporte_seleccionado); ?>">
             <button type="button" class="btn btn-success" onclick="guardarCambios()">Guardar Cambios</button>
             <div id="guardarMensaje" style="margin-top: 15px;"></div>
         </div>
+        <?php endif; ?>
+
         <?php
         exit;
     } else {
@@ -184,7 +261,7 @@ ob_start();
 <table class="table table-striped mt-3">
     <thead>
         <tr>
-            <th>ID</th>
+            <th>Folio</th>
             <th>Ubicación</th>
             <th>Equipo</th>
             <th>Descripción</th>
@@ -288,12 +365,13 @@ ob_start();
 
     function guardarCambios() {
         const idReporte = document.querySelector('#detalleModal input[name="id_reporte"]').value;
-        const tecnicoSeleccionado = document.getElementById('tecnico_seleccionado').value;
+        const areaSeleccionada = document.getElementById('area_seleccionada').value;
         const prioridad = document.getElementById('prioridad').value;
+        const tecnicoSeleccionado = document.getElementById('tecnico_seleccionado').value;
         const mensajeDiv = document.getElementById('guardarMensaje');
 
-        if (!tecnicoSeleccionado || !prioridad) {
-            mensajeDiv.innerHTML = '<p style="color: red;">Por favor, selecciona un técnico y una prioridad.</p>';
+        if (!areaSeleccionada || !prioridad || !tecnicoSeleccionado) {  
+            mensajeDiv.innerHTML = '<p style="color: red;">Por favor asigna el área, incidencia, prioridad y técnico.</p>';
             return;
         }
 
@@ -302,7 +380,7 @@ ob_start();
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
             },
-            body: `id_reporte=${encodeURIComponent(idReporte)}&tecnico_seleccionado=${encodeURIComponent(tecnicoSeleccionado)}&prioridad=${encodeURIComponent(prioridad)}`,
+            body: `id_reporte=${encodeURIComponent(idReporte)}&area_seleccionada=${encodeURIComponent(areaSeleccionada)}&prioridad=${encodeURIComponent(prioridad)}&tecnico_seleccionado=${encodeURIComponent(tecnicoSeleccionado)}`,
         })
         .then(response => response.json())
         .then(data => {
