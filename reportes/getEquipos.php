@@ -5,7 +5,7 @@ if (isset($_POST['id_ubicacion'])) {
     $id_ubicacion = $_POST['id_ubicacion'];
 
     // Consultar los equipos en la ubicación seleccionada
-    $sql = "SELECT numero_serie FROM Equipos WHERE id_ubicacion = ?";
+    $sql = "SELECT modelo FROM Equipos WHERE id_ubicacion = ?";
     $stmt = $conn->prepare($sql);
     $stmt->bind_param("i", $id_ubicacion);
     $stmt->execute();
