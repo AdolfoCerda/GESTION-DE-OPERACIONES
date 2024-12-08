@@ -109,6 +109,7 @@ $content = ob_get_clean();
 include 'layout.php';
 ?>
 
+
 <script>
     document.getElementById('ubicacion').addEventListener('change', function () {
         const ubicacionId = this.value;
@@ -130,8 +131,8 @@ include 'layout.php';
                 } else {
                     data.forEach(equipo => {
                         const option = document.createElement('option');
-                        option.value = equipo.numero_serie;
-                        option.textContent = equipo.numero_serie;
+                        option.value = equipo.modelo;
+                        option.textContent = equipo.modelo;
                         equipoSelect.appendChild(option);
                     });
                 }
