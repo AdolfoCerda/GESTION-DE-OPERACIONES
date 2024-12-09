@@ -84,23 +84,31 @@ ob_start();
 
 <form method="POST" action="anadirreportes.php" class="container">
     <!-- Selección de ubicación existente -->
-    <label for="ubicacion">Ubicación:</label><br>
-    <select name="ubicacion" id="ubicacion" required>
-        <option value="">-- Seleccionar ubicación --</option>
-        <?php while ($row = $result_ubicaciones->fetch_assoc()): ?>
-            <option value="<?php echo $row['id_ubicacion']; ?>"><?php echo $row['nombre_ubicacion']; ?></option>
-        <?php endwhile; ?>
-    </select><br><br>
+    <div class="form-group">
+        <label for="ubicacion">Ubicación:</label>
+        <select name="ubicacion" id="ubicacion" class="form-control" required>
+            <option value="">-- Seleccionar ubicación --</option>
+            <?php while ($row = $result_ubicaciones->fetch_assoc()): ?>
+                <option value="<?php echo $row['id_ubicacion']; ?>"><?php echo $row['nombre_ubicacion']; ?></option>
+            <?php endwhile; ?>
+        </select>
+    </div>
 
     <!-- Selección de equipos existentes en la ubicación -->
-    <label for="equipo">Equipo:</label><br>
-    <select name="equipo" id="equipo" required>
-        <option value="">-- Seleccionar equipo --</option>
-    </select><br><br>
+    <div class="form-group mt-3">
+        <label for="equipo">Equipo:</label>
+        <select name="equipo" id="equipo" class="form-control" required>
+            <option value="">-- Seleccionar equipo --</option>
+        </select>
+    </div>
 
-    <label for="descripcion">Descripción:</label><br>
-    <textarea name="descripcion" placeholder="Descripción del problema" required></textarea><br><br>
+    <!-- Descripción del reporte -->
+    <div class="form-group mt-3">
+        <label for="descripcion">Descripción:</label>
+        <textarea name="descripcion" class="form-control" placeholder="Descripción del problema" required></textarea>
+    </div>
 
+    <!-- Botón para enviar el reporte -->
     <button type="submit" class="btn btn-primary mt-4">Agregar Reporte</button>
 </form>
 
