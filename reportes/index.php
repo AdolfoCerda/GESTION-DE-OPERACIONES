@@ -3,7 +3,7 @@ session_start();
 
 // Si el usuario ya ha iniciado sesión, redirigir a la página de inicio
 if (isset($_SESSION['usuario'])) {
-    header("Location: inicio.php");
+    header("Location: reportes.php");
     exit();
 }
 ?>
