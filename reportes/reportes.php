@@ -350,7 +350,7 @@ ob_start();
                     <?php if ($tipo_usuario == 'docente' && $row['estado'] == 'Terminado'): ?>
                         <span 
                             class="bi bi-check-circle-fill" 
-                            style="color: #d4edda; cursor: pointer;" 
+                            style="color: green; cursor: pointer;" 
                             data-bs-toggle="tooltip" 
                             data-bs-placement="top" 
                             title="Cerrar reporte" 
