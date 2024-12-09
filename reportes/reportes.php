@@ -488,13 +488,27 @@ ob_start();
 
     // Función para cerrar el reporte
     function cerrarReporte(idReporte) {
+        // Crear un formulario de calificación y comentario
+        let calificacion = prompt("Ingresa una calificación para el reporte del 1 al 5:");
+
+        // Validar que la calificación sea un número entre 1 y 5
+        if (calificacion < 1 || calificacion > 5 || isNaN(calificacion)) {
+            alert("Por favor, selecciona una calificación válida entre 1 y 5.");
+            return;  // No proceder si la calificación no es válida
+        }
+
+        // Preguntar si el usuario desea agregar un comentario opcional
+        let comentario = prompt("¿Quieres agregar un comentario opcional? (Deja en blanco si no)");
+
+        // Confirmar si el usuario está seguro de cerrar el reporte
         if (confirm("¿Estás seguro de que quieres cerrar este reporte?")) {
+            // Enviar los datos al servidor para actualizar el estado, calificación y comentario
             fetch('cerrarreporte.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
                 },
-                body: `id_reporte=${encodeURIComponent(idReporte)}`
+                body: `id_reporte=${encodeURIComponent(idReporte)}&calificacion=${encodeURIComponent(calificacion)}&comentarios_calificacion=${encodeURIComponent(comentario)}`
             })
             .then(response => response.json())
             .then(data => {
@@ -511,6 +525,7 @@ ob_start();
             });
         }
     }
+
 
     function mostrarModal(idReporte) {
         fetch(`reportes.php?id_reporte=${idReporte}`)
