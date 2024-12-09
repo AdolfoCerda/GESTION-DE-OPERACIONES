@@ -78,7 +78,8 @@ if (isset($_GET['id_reporte']) && is_numeric($_GET['id_reporte'])) {
     $sql_detalle_reporte = "SELECT 
         r.*,
         u.nombre_ubicacion,
-        us.nombre_usuario
+        us.nombre_usuario,
+        us.id_area
     FROM 
         reportes r
     JOIN 
@@ -97,7 +98,8 @@ if (isset($_GET['id_reporte']) && is_numeric($_GET['id_reporte'])) {
 
     if ($result_detalle_reporte->num_rows > 0) {
         $detalle_reporte = $result_detalle_reporte->fetch_assoc();
-        ?>
+    ?>
+        <input type="hidden" name="id_reporte" value="<?= $detalle_reporte['id_reporte']; ?>">
         <table class="detalle-table">
             <tbody>
                 <tr>
@@ -126,7 +128,7 @@ if (isset($_GET['id_reporte']) && is_numeric($_GET['id_reporte'])) {
                 </tr>
                 <tr>
                     <th>Área:</th>
-                    <!-- Si area no se ha asignado y es admin, seleccionar -->
+                    <!-- Si prioridad no se ha asignado y es admin, seleccionar -->
                     <?php if ($detalle_reporte['id_area'] === null && $tipo_usuario === 'admin'): ?>
                     <td>
                         <select name="area_seleccionada" id="area_seleccionada" required>
@@ -143,11 +145,11 @@ if (isset($_GET['id_reporte']) && is_numeric($_GET['id_reporte'])) {
                         </select>
                     </td>
                     <?php endif; ?>
-                    <!-- Si area no se ha asignado y no es admin, pendiente -->
+                    <!-- Si tecnico no se ha asignado y no es admin, pendiente -->
                     <?php if ($detalle_reporte['id_area'] === null && $tipo_usuario !== 'admin'): ?>
                         <td>Pendiente por asignar</td>
                     <?php endif; ?>
-                    <!-- Si area se asignó, mostrar -->
+                    <!-- Si tecnico se asingó, mostrar -->
                     <?php if ($detalle_reporte['id_area'] !== null): ?>
                         <?php
                         //Obtener nombre_area con id_area
@@ -190,6 +192,15 @@ if (isset($_GET['id_reporte']) && is_numeric($_GET['id_reporte'])) {
                     <td>
                         <select name="tecnico_seleccionado" id="tecnico_seleccionado" required>
                             <option value="">-- Seleccionar técnico --</option>
+                            <?php
+                            $sql_tecnicos = "SELECT id_usuario, nombre_usuario FROM Usuarios WHERE tipo_usuario = 'Tecnico'";
+                            $result_tecnicos = $conn->query($sql_tecnicos);
+                            while ($tecnico = $result_tecnicos->fetch_assoc()): ?>
+                                <option value="<?= $tecnico['id_usuario']; ?>" 
+                                    <?= $detalle_reporte['id_tecnico'] == $tecnico['id_usuario'] ? 'selected' : ''; ?>>
+                                    <?= $tecnico['nombre_usuario']; ?>
+                                </option>
+                            <?php endwhile; ?>
                         </select>
                     </td>
                     <?php endif; ?>
@@ -197,7 +208,7 @@ if (isset($_GET['id_reporte']) && is_numeric($_GET['id_reporte'])) {
                     <?php if ($detalle_reporte['id_tecnico'] === null && $tipo_usuario !== 'admin'): ?>
                         <td>Pendiente por asignar</td>
                     <?php endif; ?>
-                    <!-- Si tecnico se asignó, mostrar -->
+                    <!-- Si tecnico se asingó, mostrar -->
                     <?php if ($detalle_reporte['id_tecnico'] !== null): ?>
                         <?php
                         //Obtener nombre_usuario de usuarios donde id_usuario = id_tecnico
@@ -213,8 +224,45 @@ if (isset($_GET['id_reporte']) && is_numeric($_GET['id_reporte'])) {
                 </tr>
                 <tr>
                     <th>Estado:</th>
-                    <td><?= $detalle_reporte['estado']; ?></td>
+                    <td>
+                        <!-- Si el usuario es técnico y el reporte está asignado a él, permitir cambiar el estado -->
+                        <?php if ($tipo_usuario == 'tecnico' && $detalle_reporte['estado'] != 'Cerrado' && $detalle_reporte['id_tecnico'] == $_SESSION['id_usuario']): ?>
+                            <div id="estadoContainer">
+                                <select name="estado" id="estado" required onchange="estadoChanged()">
+                                    <option value="Asignado" <?= $detalle_reporte['estado'] === 'Asignado' ? 'selected' : ''; ?>>Asignado</option>
+                                    <option value="Pendiente" <?= $detalle_reporte['estado'] === 'Pendiente' ? 'selected' : ''; ?>>Pendiente</option>
+                                    <option value="Terminado" <?= $detalle_reporte['estado'] === 'Terminado' ? 'selected' : ''; ?>>Terminado</option>
+                                </select>
+                                <!-- Icono de guardar, oculto por defecto -->
+                                <i class="bi bi-save" id="saveEstadoIcon" style="display: none;" onclick="guardarEstado()"></i>
+                            </div>
+                        <?php else: ?>
+                            <?= $detalle_reporte['estado']; ?>
+                        <?php endif; ?>
+                    </td>
                 </tr>
+
+
+                <tr>
+                    <th>Comentarios:</th>
+                    <td>
+                        <!-- Si el tipo de usuario es admin o técnico, permite editar -->
+                        <?php if (($tipo_usuario === 'admin' || $tipo_usuario === 'tecnico') && $detalle_reporte['estado'] != 'Cerrado'): ?>
+                            <!-- Si ya hay un comentario, mostrarlo en un textarea de solo lectura por defecto -->
+                            <div id="comentariosContainer">
+                                <textarea id="comentariosText" readonly><?= $detalle_reporte['comentarios']; ?></textarea>
+                                <!-- Icono de editar -->
+                                <i class="bi bi-pencil-square" id="editComentarioIcon" onclick="editarComentario()"></i>
+                                <!-- Icono de guardar, oculto por defecto -->
+                                <i class="bi bi-save" id="saveComentarioIcon" style="display: none;" onclick="guardarComentario()"></i>
+                            </div>
+                        <?php else: ?>
+                            <!-- Si no es admin o técnico, solo mostrar los comentarios -->
+                            <p><?= $detalle_reporte['comentarios']; ?></p>
+                        <?php endif; ?>
+                    </td>
+                </tr>
+
             </tbody>
         </table>
 
@@ -265,6 +313,28 @@ ob_start();
     <tbody>
     <?php if ($result_reportes->num_rows > 0): ?>
         <?php while ($row = $result_reportes->fetch_assoc()): ?>
+            <?php
+                // Asignar clase según el estado
+                $estado_clase = '';
+                $estado = strtolower($row['estado']); // Convertimos a minúsculas para evitar problemas con mayúsculas
+                switch ($estado) {
+                    case 'enviado':
+                        $estado_clase = 'estado-enviado';
+                        break;
+                    case 'asignado':
+                        $estado_clase = 'estado-asignado';
+                        break;
+                    case 'pendiente':
+                        $estado_clase = 'estado-pendiente';
+                        break;
+                    case 'terminado':
+                        $estado_clase = 'estado-terminado';
+                        break;
+                    case 'cerrado':
+                        $estado_clase = 'estado-cerrado';
+                        break;
+                }
+            ?>
             <tr>
                 <td><a href="javascript:void(0)" onclick="mostrarModal(<?= $row['id_reporte']; ?>)">
                     <?= $row['id_reporte']; ?> <i class="bi bi-pencil-square"></i>
@@ -275,7 +345,19 @@ ob_start();
                 <td><?= $row['fecha']; ?></td>
                 <td><?= $row['hora']; ?></td>
                 <td><?= $row['nombre_usuario'] ? $row['nombre_usuario'] : 'Pendiente por asignar'; ?></td>
-                <td><?= $row['estado']; ?></td>
+                <td class="<?= $estado_clase; ?>"> <!-- Aquí aplicamos la clase basada en el estado -->
+                    <?= ucfirst($row['estado']); ?> <!-- Mostrar el estado con la primera letra en mayúscula -->
+                    <?php if ($tipo_usuario == 'docente' && $row['estado'] == 'Terminado'): ?>
+                        <span 
+                            class="bi bi-check-circle-fill" 
+                            style="color: #d4edda; cursor: pointer;" 
+                            data-bs-toggle="tooltip" 
+                            data-bs-placement="top" 
+                            title="Cerrar reporte" 
+                            onclick="cerrarReporte(<?= $row['id_reporte']; ?>)"
+                        ></span>
+                    <?php endif; ?>
+                </td>
             </tr>
         <?php endwhile; ?>
     <?php else: ?>
@@ -296,6 +378,30 @@ ob_start();
 </div>
 
 <style>
+    #comentariosContainer {
+        display: flex;
+        align-items: center;
+    }
+
+    #comentariosText {
+        width: 100%;
+        height: 100px;
+        resize: none;
+        padding: 5px;
+    }
+
+    #editComentarioIcon,
+    #saveComentarioIcon {
+        cursor: pointer;
+        margin-left: 10px;
+        font-size: 20px;
+    }
+
+    #editComentarioIcon:hover,
+    #saveComentarioIcon:hover {
+        color: #007bff;
+    }
+
     .modal {
         display: none; /* Ocultar por defecto */
         position: fixed;
@@ -336,53 +442,85 @@ ob_start();
         text-align: left;
         padding: 10px;
     }
+
+    .bi-check-circle-fill {
+        font-size: 1.5rem;
+        color: green;
+        cursor: pointer;
+    }
+
+    /* Colores suaves para cada estado */
+    .estado-enviado {
+        background-color: #f8d7da !important; /* Rojo suave */
+        color: #721c24 !important; /* Texto oscuro */
+    }
+
+    .estado-asignado {
+        background-color: #fff3cd !important; /* Amarillo suave */
+        color: #856404 !important; /* Texto oscuro */
+    }
+
+    .estado-pendiente {
+        background-color: #fdaf7e !important; /* Naranja suave */
+        color: #6c757d !important; /* Texto oscuro */
+    }
+
+    .estado-terminado {
+        background-color: #cce5ff !important; /* Azul suave */
+        color: #004085 !important; /* Texto oscuro */
+    }
+
+    .estado-cerrado {
+        background-color: #d4edda !important; /* Verde suave */
+        color: #155724 !important; /* Texto oscuro */
+    }
+
 </style>
 
 <script>
+    // Habilitar tooltips en la página
+    document.addEventListener('DOMContentLoaded', function () {
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+            new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    });
+
+    // Función para cerrar el reporte
+    function cerrarReporte(idReporte) {
+        if (confirm("¿Estás seguro de que quieres cerrar este reporte?")) {
+            fetch('cerrarreporte.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `id_reporte=${encodeURIComponent(idReporte)}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert("Reporte cerrado exitosamente.");
+                    location.reload();  // Recargar la página para actualizar el estado
+                } else {
+                    alert("Hubo un error al cerrar el reporte.");
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert("Error al cerrar el reporte.");
+            });
+        }
+    }
+
     function mostrarModal(idReporte) {
-    fetch(`reportes.php?id_reporte=${idReporte}`)
-        .then(response => response.text())
-        .then(data => {
-            document.getElementById('detalleTitulo').textContent = `Detalle del Reporte #${idReporte}`;
-            document.getElementById('detalleContenido').innerHTML = data;
-            document.getElementById('detalleModal').style.display = 'block';
-
-            // Mover el código del event listener AQUÍ:
-            const areaSelect = document.getElementById('area_seleccionada');
-            if (areaSelect) {
-                areaSelect.addEventListener('change', function () {
-                    const idArea = this.value;
-                    const tecnicoSelect = document.getElementById('tecnico_seleccionado');
-                    tecnicoSelect.innerHTML = '<option value="">-- Seleccionar técnico --</option>'; // Clear options
-
-                    if (idArea) {
-                        fetch('getTecnicos.php', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                            body: 'id_area=' + encodeURIComponent(idArea)
-                        })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.mensaje) {
-                                tecnicoSelect.innerHTML = '<option value="">' + data.mensaje + '</option>';
-                            } else {
-                                data.forEach(tecnico => {
-                                    const option = document.createElement('option');
-                                    option.value = tecnico.id_usuario;
-                                    option.textContent = tecnico.nombre_usuario;
-                                    tecnicoSelect.appendChild(option);
-                                });
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Error:', error);
-                            tecnicoSelect.innerHTML = '<option value="">Error al cargar técnicos</option>';
-                        });
-                    }
-                });
-            }
-        })
-        .catch(error => console.error('Error:', error));
+        fetch(`reportes.php?id_reporte=${idReporte}`)
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById('detalleTitulo').textContent = `Detalle del Reporte #${idReporte}`;
+                document.getElementById('detalleContenido').innerHTML = data;
+                document.getElementById('detalleModal').style.display = 'block';
+            })
+            .catch(error => console.error('Error:', error));
     }
 
     function cerrarModal() {
@@ -394,6 +532,7 @@ ob_start();
         const areaSeleccionada = document.getElementById('area_seleccionada').value;
         const prioridad = document.getElementById('prioridad').value;
         const tecnicoSeleccionado = document.getElementById('tecnico_seleccionado').value;
+        const estado = document.getElementById('estado') ? document.getElementById('estado').value : ''; // Obtener el estado si existe
         const mensajeDiv = document.getElementById('guardarMensaje');
 
         if (!areaSeleccionada || !prioridad || !tecnicoSeleccionado) {  
@@ -406,7 +545,7 @@ ob_start();
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
             },
-            body: `id_reporte=${encodeURIComponent(idReporte)}&area_seleccionada=${encodeURIComponent(areaSeleccionada)}&prioridad=${encodeURIComponent(prioridad)}&tecnico_seleccionado=${encodeURIComponent(tecnicoSeleccionado)}`,
+            body: `id_reporte=${encodeURIComponent(idReporte)}&area_seleccionada=${encodeURIComponent(areaSeleccionada)}&prioridad=${encodeURIComponent(prioridad)}&tecnico_seleccionado=${encodeURIComponent(tecnicoSeleccionado)}&estado=${encodeURIComponent(estado)}` // Pasar el estado también
         })
         .then(response => response.json())
         .then(data => {
@@ -422,6 +561,92 @@ ob_start();
             mensajeDiv.innerHTML = '<p style="color: red;">Ocurrió un error al guardar los cambios.</p>';
         });
     }
+
+    function estadoChanged() {
+        // Mostrar el icono de guardar
+        document.getElementById('saveEstadoIcon').style.display = 'inline-block';
+    }
+
+    function guardarEstado() {
+        const idReporte = document.querySelector('#detalleModal input[name="id_reporte"]').value;
+        const estado = document.getElementById('estado').value;
+
+        // Realizar la solicitud para guardar el estado
+        fetch('guardarestado.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `id_reporte=${encodeURIComponent(idReporte)}&estado=${encodeURIComponent(estado)}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Si la actualización fue exitosa, ocultar el icono de guardar
+                document.getElementById('saveEstadoIcon').style.display = 'none';
+                alert("Estado actualizado")
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                alert("Error al actualizar estado")
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert("Error al actualizar estado")
+        });
+    }
+
+    function editarComentario() {
+        // Hacer editable el textarea y mostrar el icono de guardar
+        document.getElementById('comentariosText').removeAttribute('readonly');
+        document.getElementById('saveComentarioIcon').style.display = 'inline-block';
+        document.getElementById('editComentarioIcon').style.display = 'none';
+    }
+
+    function guardarComentario() {
+        // Verifica si el modal tiene el campo input con id_reporte
+        const idReporte = document.querySelector('#detalleModal input[name="id_reporte"]');
+        
+        if (idReporte) {
+            const reporteId = idReporte.value;
+            const comentario = document.getElementById('comentariosText').value;
+
+            // Verificar que el comentario no esté vacío
+            if (comentario.trim() === '') {
+                alert('El comentario no puede estar vacío.');
+                return;
+            }
+
+            // Realizar una solicitud para guardar el comentario
+            fetch('guardacomentario.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: `id_reporte=${reporteId}&comentario=${encodeURIComponent(comentario)}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Si la respuesta es exitosa, ocultar el icono de guardar y mostrar el de editar
+                    document.getElementById('comentariosText').setAttribute('readonly', true);
+                    document.getElementById('saveComentarioIcon').style.display = 'none';
+                    document.getElementById('editComentarioIcon').style.display = 'inline-block';
+                    alert('Comentario guardado exitosamente.');
+                } else {
+                    alert('Hubo un error al guardar el comentario.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Ocurrió un error al guardar el comentario.');
+            });
+        } else {
+            alert('No se encontró el ID del reporte.');
+        }
+    }
+
+
 </script>
 
 <?php
