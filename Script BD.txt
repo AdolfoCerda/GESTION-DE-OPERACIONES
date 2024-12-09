@@ -80,7 +80,10 @@ CREATE TABLE IF NOT EXISTS reportes (
   reporta VARCHAR(50) NOT NULL,
   id_tecnico INT NULL,
   prioridad VARCHAR(50) NOT NULL,
-  estado VARCHAR(50) DEFAULT 'enviado'
+  estado VARCHAR(50) DEFAULT 'enviado',
+  comentarios VARCHAR(300) DEFAULT '',
+  calificacion INT NULL,
+  comentarios_calificacion VARCHAR(100) DEFAULT ''
 );
 
 -- Tabla servicios
